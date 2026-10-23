@@ -3,7 +3,7 @@ using UnityEngine;
 namespace CardCreator
 {
 
-    //world renderer, deprecated
+    //world renderer, deprecated as 3D was abandoned
     public class CardWorldImage : MonoBehaviour
     {
         [SerializeField] private SpriteRenderer _renderer;

@@ -22,7 +22,7 @@ namespace CardCreator
             {
                 Vector2 lNormalized = pOutline[i] / pSize;
 
-                //Debug.log(pOutline[0]);
+                //Debug.Log(pOutline[0]);
 
                 lVertices[i] = pOutline[i];
                 lNormals[i] = Vector3.back;
@@ -39,9 +39,9 @@ namespace CardCreator
                 lUVs[lCount + i] = CardShapeUtility.MapUV(new Vector2(-lNormalized.x, lNormalized.y), pBackUV);
             }
 
-            //Debug.log(pOutline[0]);
+            //Debug.Log(pOutline[0]);
 
-            //The triangulation is Clockwise since Unity draws faces clockwise, this also means the front triangles are always reversed
+            //The triangulation is CC since triangulator returns CC triangles, this also means the front triangles are always reversed
             int[] lFront = new int[lTriangles.Count];
             int[] lBack = new int[pIsDoubleSided ? lTriangles.Count : 0];
 
@@ -51,7 +51,7 @@ namespace CardCreator
                 lFront[i + 1] = lTriangles[i + 2];
                 lFront[i + 2] = lTriangles[i + 1];
 
-                //Debug.log(lFront[i + 2]);
+                //Debug.Log(lFront[i + 2]);
 
                 if (!pIsDoubleSided)
                     continue;

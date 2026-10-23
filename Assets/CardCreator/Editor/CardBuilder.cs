@@ -235,7 +235,10 @@ namespace CardCreator.Editor
             pText.raycastTarget = false;
             pText.enableAutoSizing = pElement.autoSize;
             pText.fontSizeMax = pFontSize;
-            pText.fontSizeMin = pFontSize * 0.2f; //Why TMP, why is it so long to just switch style
+            pText.fontSizeMin = pFontSize * 0.2f; 
+            
+            
+            //Why TMP, why is it so long to just switch style
         }
 
         private void AddMeshRenderer(GameObject pObject, Mesh pMesh, Material[] pMaterials)

@@ -521,7 +521,7 @@ namespace CardCreator.Editor
         private static bool ContainPoint(CardElement pElement, Vector2 pPoint)
         {
             Vector2 lLocal = Rotate(pPoint - pElement.position, -pElement.rotation);
-            //Lambda expression running a chec to see if the point is inside the bonds
+            //simple check to see if the point is inside the bonds
             return Mathf.Abs(lLocal.x) <= pElement.size.x * 0.5f && Mathf.Abs(lLocal.y) <= pElement.size.y * 0.5f;
         }
 

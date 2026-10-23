@@ -47,7 +47,7 @@ namespace CardCreator.Editor
             return null;
         }
 
-        //this is where we actually make the card prefab and SO, UI-Mode only, the 3D is still WIP 
+        //this is where we actually make the card prefab and SO, UI-Mode only, the 3D is still WIP since it doesn't work properly in the editor
         public static void Generate(CardTemplate pTemplate)
         {
             SyncDraft(pTemplate);

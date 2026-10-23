@@ -141,7 +141,7 @@ namespace CardCreator.Editor
             return lHasChanged;
         }
 
-        //byte mapping
+        //change detection
         private static bool CopyVariableSettings(CardVariable pSource, CardVariable pTarget)
         {
             bool lHasChanged = Set(ref pTarget.id, pSource.id);
@@ -163,7 +163,7 @@ namespace CardCreator.Editor
             pTarget.colorValue = pSource.colorValue;
         }
 
-        //more byte mapping
+        //more change detection
         private static bool CopyElementLayout(CardElement pSource, CardElement pTarget)
         {
             bool lHasChanged = Set(ref pTarget.id, pSource.id);

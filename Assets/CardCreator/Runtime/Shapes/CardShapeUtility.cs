@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using System.Diagnostics;
 using UnityEngine.Sprites;
 
 namespace CardCreator
@@ -137,7 +136,7 @@ namespace CardCreator
             if (lBest.Count < 3)
                 return BuildRect();
 
-            //Physics shape points are in local space, relative to the PIVOT (0,0 = top left)
+            //Physics shape points are in local space, relative to the PIVOT (0,0 = bottom left)
             Vector2 lSize = pSprite.rect.size / pSprite.pixelsPerUnit;
             Vector2 lCenter = (pSprite.rect.size * 0.5f - pSprite.pivot) / pSprite.pixelsPerUnit;
 
