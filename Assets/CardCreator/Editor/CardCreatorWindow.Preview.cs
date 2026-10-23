@@ -53,7 +53,7 @@ namespace CardCreator.Editor
             {
                 if (_isPreviewDirty)
                 {
-                    _Preview.Rebuild(_template, _showBack);
+                    _Preview.Rebuild(_Template, _showBack);
                     _isPreviewDirty = false;
                 }
 
@@ -75,7 +75,7 @@ namespace CardCreator.Editor
             if (EditorGUI.EndChangeCheck())
                 _isPreviewDirty = true;
 
-            if (_template.shape.source == CardShapeSource.Polygon)
+            if (_Template.shape.source == CardShapeSource.Polygon)
                 _isEditingShape = GUILayout.Toggle(_isEditingShape, "Edit Shape", EditorStyles.toolbarButton);
 
             GUILayout.FlexibleSpace();
@@ -97,7 +97,7 @@ namespace CardCreator.Editor
         //Quick bool so toggles lives through changes
         private bool IsEditingShape()
         {
-            return _isEditingShape && _template.shape.source == CardShapeSource.Polygon;
+            return _isEditingShape && _Template.shape.source == CardShapeSource.Polygon;
         }
 
         #region Input
@@ -180,7 +180,7 @@ namespace CardCreator.Editor
             if (pEvent.button != 0)
                 return;
 
-            CardElement lSelected = _template.FindElement(_SelectedElementId);
+            CardElement lSelected = _Template.FindElement(_SelectedElementId);
 
             if (lSelected != null)
             {
@@ -200,9 +200,9 @@ namespace CardCreator.Editor
             Vector2 lMouse = ViewToCard(pView, pEvent.mousePosition);
 
             //Topmost element first
-            for (int i = _template.elements.Count - 1; i >= 0; i--)
+            for (int i = _Template.elements.Count - 1; i >= 0; i--)
             {
-                CardElement lElement = _template.elements[i];
+                CardElement lElement = _Template.elements[i];
 
                 if (!ContainPoint(lElement, lMouse))
                     continue;
@@ -218,7 +218,7 @@ namespace CardCreator.Editor
 
         private void StartShapeDrag(Rect pView, Event pEvent)
         {
-            List<Vector2> lPoints = _template.shape.points;
+            List<Vector2> lPoints = _Template.shape.points;
             int lPoint = FindShapePoint(pView, pEvent.mousePosition);
 
             if (pEvent.button == 1)
@@ -253,23 +253,23 @@ namespace CardCreator.Editor
             }
 
             Vector2 lMouse = ViewToCard(pView, pEvent.mousePosition);
-            CardElement lElement = _template.FindElement(_SelectedElementId);
+            CardElement lElement = _Template.FindElement(_SelectedElementId);
 
             switch (_drag)
             {
                 case PreviewDrag.Move:
-                    Undo.RecordObject(_template, "Move Element");
+                    Undo.RecordObject(_Template, "Move Element");
                     lElement.position = Snap(lMouse + _dragAnchor);
                     break;
 
                 case PreviewDrag.Resize:
-                    Undo.RecordObject(_template, "Resize Element");
+                    Undo.RecordObject(_Template, "Resize Element");
                     ResizeElement(lElement, Snap(lMouse), pEvent.shift);
                     break;
 
                 case PreviewDrag.ShapePoint:
-                    Undo.RecordObject(_template, "Move Shape Point");
-                    _template.shape.points[_dragIndex] = Snap(lMouse) / _template.shape.size;
+                    Undo.RecordObject(_Template, "Move Shape Point");
+                    _Template.shape.points[_dragIndex] = Snap(lMouse) / _Template.shape.size;
                     break;
             }
 
@@ -305,11 +305,11 @@ namespace CardCreator.Editor
 
         private int FindShapePoint(Rect pView, Vector2 pMousePosition)
         {
-            List<Vector2> lPoints = _template.shape.points;
+            List<Vector2> lPoints = _Template.shape.points;
 
             for (int i = 0; i < lPoints.Count; i++)
             {
-                if (Vector2.Distance(FromCardToView(pView, Vector2.Scale(lPoints[i], _template.shape.size)), pMousePosition) <= 7f)
+                if (Vector2.Distance(FromCardToView(pView, Vector2.Scale(lPoints[i], _Template.shape.size)), pMousePosition) <= 7f)
                     return i;
             }
 
@@ -319,17 +319,17 @@ namespace CardCreator.Editor
         //Adds a point on the edge under the mouse, returns its index or -1 when no edge is close enough 
         private int InsertShapePoint(Rect pView, Vector2 pMousePosition)
         {
-            List<Vector2> lPoints = _template.shape.points;
+            List<Vector2> lPoints = _Template.shape.points;
 
             for (int i = 0; i < lPoints.Count; i++)
             {
-                Vector2 lA = FromCardToView(pView, Vector2.Scale(lPoints[i], _template.shape.size));
-                Vector2 lB = FromCardToView(pView, Vector2.Scale(lPoints[(i + 1) % lPoints.Count], _template.shape.size));
+                Vector2 lA = FromCardToView(pView, Vector2.Scale(lPoints[i], _Template.shape.size));
+                Vector2 lB = FromCardToView(pView, Vector2.Scale(lPoints[(i + 1) % lPoints.Count], _Template.shape.size));
 
                 if (HandleUtility.DistancePointLine(pMousePosition, lA, lB) > 6f)
                     continue;
 
-                Vector2 lPoint = ViewToCard(pView, HandleUtility.ProjectPointLine(pMousePosition, lA, lB)) / _template.shape.size;
+                Vector2 lPoint = ViewToCard(pView, HandleUtility.ProjectPointLine(pMousePosition, lA, lB)) / _Template.shape.size;
                 ModifyTemplate("Add Shape Point", () => lPoints.Insert(i + 1, lPoint));
                 return i + 1;
             }
@@ -353,7 +353,7 @@ namespace CardCreator.Editor
 
         private void DrawOverlay(Rect pView)
         {
-            DrawPolyline(pView, CardShapeUtility.BuildOutline(_template.shape), new Color(1f, 1f, 1f, 0.2f), 1f);
+            DrawPolyline(pView, CardShapeUtility.BuildOutline(_Template.shape), new Color(1f, 1f, 1f, 0.2f), 1f);
 
             if (_showBack)
                 return;
@@ -369,7 +369,7 @@ namespace CardCreator.Editor
 
             CardElement lSelected = null;
 
-            foreach (CardElement lElement in _template.elements)
+            foreach (CardElement lElement in _Template.elements)
             {
                 if (lElement.id == _SelectedElementId)
                 {
@@ -378,10 +378,10 @@ namespace CardCreator.Editor
                 }
 
                 Vector3[] lCorners = GetViewCorners(pView, lElement);
-                bool lIsVisible = CardBuilder.IsElementVisible(_template, lElement);
+                bool lIsVisible = CardBuilder.IsElementVisible(_Template, lElement);
 
                 // displays placeholder
-                if (lElement.type == CardElementType.Image && CardBuilder.GetElementSprite(_template, lElement) == null)
+                if (lElement.type == CardElementType.Image && CardBuilder.GetElementSprite(_Template, lElement) == null)
                 {
                     Handles.color = new Color(0.3f, 0.6f, 1f, 0.25f);
                     Handles.DrawAAConvexPolygon(lCorners);
@@ -412,17 +412,17 @@ namespace CardCreator.Editor
                 EditorGUIUtility.AddCursorRect(lHandle, MouseCursor.ScaleArrow);
             }
 
-            if (pElement.type == CardElementType.Image && CardBuilder.GetElementSprite(_template, pElement) == null)
+            if (pElement.type == CardElementType.Image && CardBuilder.GetElementSprite(_Template, pElement) == null)
                 GUI.Label(GetViewBounds(lCorners), pElement.name, _placeholderStyle);
         }
 
         private void DrawShapeHandles(Rect pView)
         {
-            List<Vector2> lPoints = _template.shape.points;
+            List<Vector2> lPoints = _Template.shape.points;
             List<Vector2> lCardPoints = new List<Vector2>(lPoints.Count);
 
             foreach (Vector2 lPoint in lPoints)
-                lCardPoints.Add(Vector2.Scale(lPoint, _template.shape.size));
+                lCardPoints.Add(Vector2.Scale(lPoint, _Template.shape.size));
 
             DrawPolyline(pView, lCardPoints, _ShapeColor, 2f);
 
@@ -462,7 +462,7 @@ namespace CardCreator.Editor
 
         private float GetOrthographicSize(Rect pView)
         {
-            Vector2 lSize = _template.shape.size;
+            Vector2 lSize = _Template.shape.size;
             float lAspect = pView.width / Mathf.Max(pView.height, 1f);
 
             //Fits the whole card with a margin around it

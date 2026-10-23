@@ -10,8 +10,8 @@ namespace CardCreator.Editor
     // The window edits a COPY of the template, written back to the asset when saving
     public partial class CardCreatorWindow : EditorWindow
     {
-        [SerializeField] private CardTemplate _template;
-        [SerializeField] private CardTemplate _templateAsset;
+        [SerializeField] private CardTemplate _Template;
+        [SerializeField] private CardTemplate _TemplateAsset;
         [SerializeField] private bool _isDirty;
         [SerializeField] private float _inspectorWidth = 380f;
 
@@ -36,6 +36,7 @@ namespace CardCreator.Editor
         {
             if (EditorUtility.EntityIdToObject(pInstanceId) is CardTemplate lTemplate)
             {
+                //Debug.Log(lTemplate.ToString());
                 Open(lTemplate);
                 return true;
             }
@@ -49,8 +50,8 @@ namespace CardCreator.Editor
             minSize = new Vector2(720f, 420f);
             saveChangesMessage = "This card template has unsaved changes. Do you want to save them?";
 
-            if (_template == null)
-                _template = CreateWorkingCopy(null);
+            if (_Template == null)
+                _Template = CreateWorkingCopy(null);
 
             hasUnsavedChanges = _isDirty;
             _Preview = new CardPreviewRenderer();
@@ -68,8 +69,8 @@ namespace CardCreator.Editor
 
         private void OnDestroy()
         {
-            Undo.ClearUndo(_template);
-            DestroyImmediate(_template);
+            Undo.ClearUndo(_Template);
+            DestroyImmediate(_Template);
         }
 
         private void OnProjectChange()
@@ -89,8 +90,8 @@ namespace CardCreator.Editor
 
         private void OnGUI()
         {
-            if (_serializedTemplate == null || _serializedTemplate.targetObject != _template)
-                _serializedTemplate = new SerializedObject(_template);
+            if (_serializedTemplate == null || _serializedTemplate.targetObject != _Template)
+                _serializedTemplate = new SerializedObject(_Template);
 
             _serializedTemplate.Update();
 
@@ -126,7 +127,7 @@ namespace CardCreator.Editor
             }
 
             EditorGUI.BeginChangeCheck();
-            CardTemplate lAsset = (CardTemplate)EditorGUILayout.ObjectField(_templateAsset, typeof(CardTemplate), false, GUILayout.Width(220f));
+            CardTemplate lAsset = (CardTemplate)EditorGUILayout.ObjectField(_TemplateAsset, typeof(CardTemplate), false, GUILayout.Width(220f));
 
             if (EditorGUI.EndChangeCheck() && lAsset != null)
             {
@@ -134,7 +135,7 @@ namespace CardCreator.Editor
                 GUIUtility.ExitGUI();
             }
 
-            if (_templateAsset == null)
+            if (_TemplateAsset == null)
                 GUILayout.Label("Not saved yet", EditorStyles.miniLabel);
 
             GUILayout.FlexibleSpace();
@@ -176,13 +177,13 @@ namespace CardCreator.Editor
 
         private void LoadTemplate(CardTemplate pAsset)
         {
-            if (pAsset != _templateAsset && ConfirmDiscard())
+            if (pAsset != _TemplateAsset && ConfirmDiscard())
                 ReplaceWorkingCopy(CreateWorkingCopy(pAsset), pAsset);
         }
 
         private void Save()
         {
-            string lError = CardNaming.ValidateCardName(_template);
+            string lError = CardNaming.ValidateCardName(_Template);
 
             if (lError != null)
             {
@@ -190,35 +191,35 @@ namespace CardCreator.Editor
                 return;
             }
 
-            if (string.IsNullOrEmpty(_template.outputFolder))
-                _template.outputFolder = "Assets/Cards/" + _template.templateName;
+            if (string.IsNullOrEmpty(_Template.outputFolder))
+                _Template.outputFolder = "Assets/Cards/" + _Template.templateName;
 
-            CreateFolders(_template.outputFolder);
+            CreateFolders(_Template.outputFolder);
 
             CardTemplate lInspectorState = null;
 
-            if (_templateAsset == null)
+            if (_TemplateAsset == null)
             {
-                _templateAsset = CreateInstance<CardTemplate>();
-                AssetDatabase.CreateAsset(_templateAsset, AssetDatabase.GenerateUniqueAssetPath($"{_template.outputFolder}/{_template.templateName}Template.asset"));
+                _TemplateAsset = CreateInstance<CardTemplate>();
+                AssetDatabase.CreateAsset(_TemplateAsset, AssetDatabase.GenerateUniqueAssetPath($"{_Template.outputFolder}/{_Template.templateName}Template.asset"));
             }
             else
             {
-                lInspectorState = Instantiate(_templateAsset);
+                lInspectorState = Instantiate(_TemplateAsset);
                 lInspectorState.hideFlags = HideFlags.HideAndDontSave;
             }
 
-            EditorUtility.CopySerialized(_template, _templateAsset);
-            _templateAsset.hideFlags = HideFlags.None;
-            _templateAsset.name = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(_templateAsset));
+            EditorUtility.CopySerialized(_Template, _TemplateAsset);
+            _TemplateAsset.hideFlags = HideFlags.None;
+            _TemplateAsset.name = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(_TemplateAsset));
 
             if (lInspectorState != null)
             {
-                CopyInspectorFields(lInspectorState, _templateAsset);
+                CopyInspectorFields(lInspectorState, _TemplateAsset);
                 DestroyImmediate(lInspectorState);
             }
-            EditorUtility.SetDirty(_templateAsset);
-            AssetDatabase.SaveAssetIfDirty(_templateAsset);
+            EditorUtility.SetDirty(_TemplateAsset);
+            AssetDatabase.SaveAssetIfDirty(_TemplateAsset);
 
             _serializedTemplate.Update();
             SetDirtyState(false);
@@ -243,11 +244,14 @@ namespace CardCreator.Editor
         //ugly
         private void ReplaceWorkingCopy(CardTemplate pCopy, CardTemplate pAsset)
         {
-            Undo.ClearUndo(_template);
-            DestroyImmediate(_template);
+            //DebugCopy(pCopy);
+            //DebugCopy(pAsset);
 
-            _template = pCopy;
-            _templateAsset = pAsset;
+            Undo.ClearUndo(_Template);
+            DestroyImmediate(_Template);
+
+            _Template = pCopy;
+            _TemplateAsset = pAsset;
             _serializedTemplate = null;
             _SelectedElementId = null;
             _isEditingShape = false;
@@ -259,11 +263,21 @@ namespace CardCreator.Editor
             Repaint();
         }
 
+        private void DebugCopy(CardTemplate pCopy)
+        {
+            Debug.Log(pCopy.name);
+
+            foreach (CardVariable var in pCopy.variables) 
+            {
+                Debug.Log(var);
+            }
+        }
+
         ///Applies a change made directly on the template instead of through serialized properties
         private void ModifyTemplate(string pUndoName, Action pChange)
         {
             _serializedTemplate.ApplyModifiedProperties();
-            Undo.RecordObject(_template, pUndoName);
+            Undo.RecordObject(_Template, pUndoName);
             pChange();
             _serializedTemplate.Update();
             OnTemplateChanged();
@@ -272,9 +286,9 @@ namespace CardCreator.Editor
         private void OnTemplateChanged()
         {
             //Elements showing a variable are named after it
-            foreach (CardElement lElement in _template.elements)
+            foreach (CardElement lElement in _Template.elements)
             {
-                CardVariable lVariable = _template.FindVariable(lElement.contentVariableId);
+                CardVariable lVariable = _Template.FindVariable(lElement.contentVariableId);
 
                 if (lVariable != null)
                     lElement.name = lVariable.name;
@@ -297,11 +311,13 @@ namespace CardCreator.Editor
             hasUnsavedChanges = pIsDirty;
         }
 
+        //Little known working copy trick, works great we used it everywhere to make, clear and/or copy templates
         private static CardTemplate CreateWorkingCopy(CardTemplate pAsset)
         {
             CardTemplate lCopy = pAsset != null ? Instantiate(pAsset) : CreateInstance<CardTemplate>();
+
             lCopy.name = pAsset != null ? pAsset.name : "NewCard"; //double ternary? in THIS economy?
-            // Keeps copy alive through script reloads without saving it anywhere, HideAndDontSave can't be used as it includes NotEditable which locks pretty much every property field
+            
             lCopy.hideFlags = HideFlags.DontSave;
             return lCopy;
         }

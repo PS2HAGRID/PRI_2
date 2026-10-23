@@ -22,13 +22,13 @@ namespace CardCreator.Editor
     //Builds the card hierarchy described by the provided template
     public class CardBuilder
     {
-        private readonly CardTemplate _template;
+        private readonly CardTemplate _Template;
         private readonly HideFlags _hideFlags;
-        private readonly CardBuildResult _result = new CardBuildResult();
+        private readonly CardBuildResult _Result = new CardBuildResult();
 
         private CardBuilder(CardTemplate pTemplate, HideFlags pHideFlags)
         {
-            _template = pTemplate;
+            _Template = pTemplate;
             _hideFlags = pHideFlags;
         }
 
@@ -43,7 +43,7 @@ namespace CardCreator.Editor
             else
                 lBuilder.BuildWorld(lOutline);
 
-            return lBuilder._result;
+            return lBuilder._Result;
         }
 
         #region Getters
@@ -98,32 +98,32 @@ namespace CardCreator.Editor
         //Builds a UI version of the card, for 2D cards only
         private void BuildUI(List<Vector2> pOutline)
         {
-            float lPixelsPerUnit = _template.pixelsPerUnit;
-            List<Vector2> lNormalizedOutline = CardShapeUtility.Normalize(pOutline, _template.shape.size);
+            float lPixelsPerUnit = _Template.pixelsPerUnit;
+            List<Vector2> lNormalizedOutline = CardShapeUtility.Normalize(pOutline, _Template.shape.size);
 
-            _result.root = CreateUIObject(_template.templateName, null);
-            ((RectTransform)_result.root.transform).sizeDelta = _template.shape.size * lPixelsPerUnit;
+            _Result.root = CreateUIObject(_Template.templateName, null);
+            ((RectTransform)_Result.root.transform).sizeDelta = _Template.shape.size * lPixelsPerUnit;
 
-            _result.front = CreateUIObject("Front", _result.root.transform);
-            Stretch(_result.front);
+            _Result.front = CreateUIObject("Front", _Result.root.transform);
+            Stretch(_Result.front);
 
-            CardShapeGraphic lBody = CreateUIObject("Body", _result.front.transform).AddComponent<CardShapeGraphic>();
+            CardShapeGraphic lBody = CreateUIObject("Body", _Result.front.transform).AddComponent<CardShapeGraphic>();
             Stretch(lBody.gameObject);
             lBody.SetOutline(lNormalizedOutline);
-            lBody.sprite = _template.GetFrontSprite();
-            lBody.color = _template.front.color;
+            lBody.sprite = _Template.GetFrontSprite();
+            lBody.color = _Template.front.color;
 
-            foreach (CardElement lElement in _template.elements)
+            foreach (CardElement lElement in _Template.elements)
             {
-                GameObject lObject = CreateUIObject(lElement.name, _result.front.transform);
+                GameObject lObject = CreateUIObject(lElement.name, _Result.front.transform);
 
                 if (lElement.type == CardElementType.Image)
                 {
                     Image lImage = lObject.AddComponent<Image>();
-                    lImage.sprite = GetElementSprite(_template, lElement);
+                    lImage.sprite = GetElementSprite(_Template, lElement);
                     lImage.enabled = lImage.sprite != null;
                     lImage.preserveAspect = lElement.preserveAspect;
-                    lImage.color = GetElementColor(_template, lElement);
+                    lImage.color = GetElementColor(_Template, lElement);
                     lImage.raycastTarget = false;
                 }
                 else ApplyTextStyle(lElement, lObject.AddComponent<TextMeshProUGUI>(), lElement.fontSize);
@@ -133,78 +133,82 @@ namespace CardCreator.Editor
                 lTransform.sizeDelta = lElement.size * lPixelsPerUnit;
                 lTransform.localEulerAngles = new Vector3(0f, 0f, lElement.rotation);
 
-                lObject.SetActive(IsElementVisible(_template, lElement));
-                _result.elementObjects[lElement.id] = lObject;
+                //Debug.Log(lObject.name);
+
+                lObject.SetActive(IsElementVisible(_Template, lElement));
+                _Result.elementObjects[lElement.id] = lObject;
             }
 
-            _result.back = CreateUIObject("Back", _result.root.transform);
-            Stretch(_result.back);
+            _Result.back = CreateUIObject("Back", _Result.root.transform);
+            Stretch(_Result.back);
 
-            CardShapeGraphic lBack = _result.back.AddComponent<CardShapeGraphic>();
+            CardShapeGraphic lBack = _Result.back.AddComponent<CardShapeGraphic>();
             lBack.SetOutline(lNormalizedOutline);
-            lBack.sprite = _template.back.sprite;
-            lBack.color = _template.back.color;
-            _result.back.SetActive(false);
+            lBack.sprite = _Template.back.sprite;
+            lBack.color = _Template.back.color;
+            _Result.back.SetActive(false);
+
+            //Debug.Log(_Result.front);
         }
 
         //Builds a World version of the card, for 3D cards
         private void BuildWorld(List<Vector2> pOutline)
         {
-            CardShapeSettings lShape = _template.shape;
-            bool lIs3D = _template.renderMode == CardRenderMode.World3D;
-            Sprite lFrontSprite = _template.GetFrontSprite();
+            CardShapeSettings lshape = _Template.shape;
+            bool lIs3D = _Template.renderMode == CardRenderMode.World3D;
+            Sprite lFrontSprite = _Template.GetFrontSprite();
             Rect lFrontUV = CardShapeUtility.GetSpriteUVRect(lFrontSprite);
-            Rect lBackUV = CardShapeUtility.GetSpriteUVRect(_template.back.sprite);
+            Rect lBackUV = CardShapeUtility.GetSpriteUVRect(_Template.back.sprite);
 
-            _result.root = CreateObject(_template.templateName, null);
-            _result.front = CreateObject("Front", _result.root.transform);
+            _Result.root = CreateObject(_Template.templateName, null);
+            _Result.front = CreateObject("Front", _Result.root.transform);
 
-            GameObject lBody = CreateObject("Body", _result.front.transform);
+            GameObject lBody = CreateObject("Body", _Result.front.transform);
 
             if (lIs3D)
             {
                 //A single double-sided mesh, the back face is always there
-                Mesh lMesh = CardMeshBuilder.Build(pOutline, lShape.size, lFrontUV, lBackUV, true);
-                Material lFront = CreateLitMaterial("Front", lFrontSprite, _template.front.color);
-                Material lBack = CreateLitMaterial("Back", _template.back.sprite, _template.back.color);
+                Mesh lMesh = CardMeshBuilder.Build(pOutline, lshape.size, lFrontUV, lBackUV, true);
+                Material lFront = CreateLitMaterial("Front", lFrontSprite, _Template.front.color);
+                Material lBack = CreateLitMaterial("Back", _Template.back.sprite, _Template.back.color);
                 AddMeshRenderer(lBody, lMesh, new[] { lFront, lBack });
             }
             else
             {
-                Mesh lMesh = CardMeshBuilder.Build(pOutline, lShape.size, lFrontUV, lBackUV, false);
-                AddMeshRenderer(lBody, lMesh, new[] { CreateSpriteMaterial("Front", lFrontSprite, _template.front.color) });
+                Mesh lMesh = CardMeshBuilder.Build(pOutline, lshape.size, lFrontUV, lBackUV, false);
+                AddMeshRenderer(lBody, lMesh, new[] { CreateSpriteMaterial("Front", lFrontSprite, _Template.front.color) });
 
                 //The back of a 2D card is a separate face shown when the card is turned over
-                _result.back = CreateObject("Back", _result.root.transform);
-                Mesh lBackMesh = CardMeshBuilder.Build(pOutline, lShape.size, lBackUV, lBackUV, false);
+                _Result.back = CreateObject("Back", _Result.root.transform);
+                Mesh lBackMesh = CardMeshBuilder.Build(pOutline, lshape.size, lBackUV, lBackUV, false);
                 lBackMesh.name = "CardBack";
-                AddMeshRenderer(_result.back, lBackMesh, new[] { CreateSpriteMaterial("Back", _template.back.sprite, _template.back.color) });
-                _result.back.SetActive(false);
+                AddMeshRenderer(_Result.back, lBackMesh, new[] { CreateSpriteMaterial("Back", _Template.back.sprite, _Template.back.color) });
+                _Result.back.SetActive(false);
             }
 
-            for (int i = 0; i < _template.elements.Count; i++)
+            for (int i = 0; i < _Template.elements.Count; i++)
             {
-                CardElement lElement = _template.elements[i];
+                CardElement lElement = _Template.elements[i];
                 GameObject lObject;
 
                 if (lElement.type == CardElementType.Image)
                 {
-                    lObject = CreateObject(lElement.name, _result.front.transform);
+                    lObject = CreateObject(lElement.name, _Result.front.transform);
 
                     SpriteRenderer lRenderer = CreateObject("Sprite", lObject.transform).AddComponent<SpriteRenderer>();
-                    lRenderer.sprite = GetElementSprite(_template, lElement);
-                    lRenderer.color = GetElementColor(_template, lElement);
+                    lRenderer.sprite = GetElementSprite(_Template, lElement);
+                    lRenderer.color = GetElementColor(_Template, lElement);
                     lRenderer.sortingOrder = i + 1;
 
                     lObject.AddComponent<CardWorldImage>().Setup(lRenderer, lElement.size, lElement.preserveAspect);
                 }
                 else
                 {
-                    lObject = CreateUIObject(lElement.name, _result.front.transform);
+                    lObject = CreateUIObject(lElement.name, _Result.front.transform);
 
                     //World texts are 10 times smaller than UI texts for the same font size
                     TextMeshPro lText = lObject.AddComponent<TextMeshPro>();
-                    ApplyTextStyle(lElement, lText, lElement.fontSize / _template.pixelsPerUnit * 10f);
+                    ApplyTextStyle(lElement, lText, lElement.fontSize / _Template.pixelsPerUnit * 10f);
                     lText.sortingOrder = i + 1;
                     ((RectTransform)lObject.transform).sizeDelta = lElement.size;
                 }
@@ -213,8 +217,8 @@ namespace CardCreator.Editor
                 float lEpsilon = -0.001f;
                 lObject.transform.localPosition = new Vector3(lElement.position.x, lElement.position.y, lIs3D ? lEpsilon * (i + 1) : 0f);
                 lObject.transform.localEulerAngles = new Vector3(0f, 0f, lElement.rotation);
-                lObject.SetActive(IsElementVisible(_template, lElement));
-                _result.elementObjects[lElement.id] = lObject;
+                lObject.SetActive(IsElementVisible(_Template, lElement));
+                _Result.elementObjects[lElement.id] = lObject;
             }
         }
 
@@ -223,11 +227,11 @@ namespace CardCreator.Editor
             if (pElement.font != null)
                 pText.font = pElement.font;
 
-            pText.text = GetElementText(_template, pElement);
+            pText.text = GetElementText(_Template, pElement);
             pText.fontSize = pFontSize;
             pText.fontStyle = pElement.fontStyle;
             pText.alignment = pElement.alignment;
-            pText.color = GetElementColor(_template, pElement);
+            pText.color = GetElementColor(_Template, pElement);
             pText.raycastTarget = false;
             pText.enableAutoSizing = pElement.autoSize;
             pText.fontSizeMax = pFontSize;
@@ -248,18 +252,19 @@ namespace CardCreator.Editor
             }
 
             pMesh.hideFlags = _hideFlags;
-            _result.generatedAssets.Add(pMesh);
+
+            _Result.generatedAssets.Add(pMesh);
 
             foreach (Material lMaterial in pMaterials)
             {
                 lMaterial.hideFlags = _hideFlags;
-                _result.generatedAssets.Add(lMaterial);
+                _Result.generatedAssets.Add(lMaterial);
             }
         }
 
         private static Material CreateSpriteMaterial(string pName, Sprite pSprite, Color pColor)
         {
-            return new Material(Shader.Find("Sprites/Default"))
+            return new Material(Shader.Find("Sprites/Default")) //Unity always packs a Sprite shader in all versions
             {
                 name = pName,
                 mainTexture = pSprite != null ? pSprite.texture : null,
@@ -267,6 +272,7 @@ namespace CardCreator.Editor
             };
         }
 
+        //Create a URP mat only, built in is not supported
         private static Material CreateLitMaterial(string pName, Sprite pSprite, Color pColor)
         {
             Shader lShader = GraphicsSettings.currentRenderPipeline.defaultShader; //Couldn't remember the name of the default lit shader ngl, and this one is more universal anyway
@@ -290,20 +296,25 @@ namespace CardCreator.Editor
         private GameObject CreateObject(string pName, Transform pParent)
         {
             GameObject lObject = new GameObject(pName) { hideFlags = _hideFlags };
+            
             lObject.transform.SetParent(pParent, false);
+
             return lObject;
         }
 
         private GameObject CreateUIObject(string pName, Transform pParent)
         {
             GameObject lObject = new GameObject(pName, typeof(RectTransform)) { hideFlags = _hideFlags };
+            
             lObject.transform.SetParent(pParent, false);
+
             return lObject;
         }
 
         private static void Stretch(GameObject pObject)
         {
             RectTransform lTransform = (RectTransform)pObject.transform;
+
             lTransform.anchorMin = Vector2.zero;
             lTransform.anchorMax = Vector2.one;
             lTransform.offsetMin = Vector2.zero;

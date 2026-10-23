@@ -13,19 +13,19 @@ namespace CardCreator.Editor
         private static readonly string[] _render2DLabels = { "UI (Canvas)", "World (Sprites)" };
         private static readonly Color _selectedRowColor = new Color(0.25f, 0.5f, 1f, 0.2f);
 
-        [SerializeField] private Vector2 _inspectorScroll;
+        [SerializeField] private Vector2 _InspectorScroll;
         [SerializeField] private bool _isCardExpanded = true;
         [SerializeField] private bool _isPerCardExpanded = true;
         [SerializeField] private bool _isFixedContentExpanded = true;
         [SerializeField] private bool _isOutputExpanded = true;
 
-        //Rows are identified by the variable id, or the element id for fixed elements
+        //Rows are identified by variable id or element id for fixed elements
         private readonly HashSet<string> _expandedRows = new HashSet<string>();
         private bool _hasTextResources;
 
         private void DrawInspector()
         {
-            _inspectorScroll = EditorGUILayout.BeginScrollView(_inspectorScroll);
+            _InspectorScroll = EditorGUILayout.BeginScrollView(_InspectorScroll);
             EditorGUILayout.Space(4f);
 
             if (!_hasTextResources)
@@ -45,6 +45,18 @@ namespace CardCreator.Editor
             EditorGUILayout.EndScrollView();
         }
 
+        //deprecated
+        /*
+        private void DrawCardInInspector()
+        {
+            DrawCardSection();
+            DrawOutputSection();
+
+            EditorGUILayout.Space(10f);
+            EditorGUILayout.EndScrollView();
+        }
+        */
+
         private void RefreshTextResources()
         {
             _hasTextResources = Resources.Load<TMP_Settings>("TMP Settings") != null;
@@ -60,6 +72,7 @@ namespace CardCreator.Editor
                 return;
 
             EditorGUILayout.PropertyField(_serializedTemplate.FindProperty("templateName"), new GUIContent("Name"));
+
             DrawRenderMode();
             DrawShape();
             DrawFaces();
@@ -73,27 +86,29 @@ namespace CardCreator.Editor
             int lDimension = EditorGUILayout.Popup("Dimension", lCurrent == CardRenderMode.World3D ? 1 : 0, _dimensionLabels);
 
             if (lDimension == 1)
+            {
                 lMode.enumValueIndex = (int)CardRenderMode.World3D;
+            }
             else
             {
                 int lRender2D = EditorGUILayout.Popup("Render", lCurrent == CardRenderMode.World2D ? 1 : 0, _render2DLabels);
                 lMode.enumValueIndex = (int)(lRender2D == 1 ? CardRenderMode.World2D : CardRenderMode.UI);
+                
+                if (lMode.enumValueIndex == (int)CardRenderMode.UI)
+                    EditorGUILayout.PropertyField(_serializedTemplate.FindProperty("pixelsPerUnit"));
             }
-
-            if (lMode.enumValueIndex == (int)CardRenderMode.UI)
-                EditorGUILayout.PropertyField(_serializedTemplate.FindProperty("pixelsPerUnit"));
         }
 
         private void DrawShape()
         {
-            CardShapeSettings lShape = _template.shape;
+            CardShapeSettings lshape = _Template.shape;
             SerializedProperty lProperty = _serializedTemplate.FindProperty("shape");
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Shape", EditorStyles.boldLabel);
 
             EditorGUI.BeginChangeCheck();
-            CardShapeSource lSource = (CardShapeSource)EditorGUILayout.EnumPopup("Source", lShape.source);
+            CardShapeSource lSource = (CardShapeSource)EditorGUILayout.EnumPopup("Source", lshape.source);
 
             if (EditorGUI.EndChangeCheck())
             {
@@ -101,17 +116,17 @@ namespace CardCreator.Editor
                 GUIUtility.ExitGUI();
             }
 
-            switch (lShape.source)
+            switch (lshape.source)
             {
                 case CardShapeSource.Preset:
                     EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("preset"));
 
-                    if (lShape.preset == CardShapePreset.RegularPolygon)
+                    if (lshape.preset == CardShapePreset.RegularPolygon)
                     {
                         EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("polygonSides"), new GUIContent("Sides"));
                         EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("polygonRotation"), new GUIContent("Rotation"));
                     }
-                    else if (lShape.preset == CardShapePreset.Ellipse)
+                    else if (lshape.preset == CardShapePreset.Ellipse)
                         EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("ellipseSegments"), new GUIContent("Segments"));
                     break;
 
@@ -121,13 +136,13 @@ namespace CardCreator.Editor
 
                     if (GUILayout.Button("Reset", GUILayout.Width(60f)))
                     {
-                        ModifyTemplate("Reset Card Shape", () => lShape.points = BuildPolygonPoints(CardShapeSource.Preset));
+                        ModifyTemplate("Reset Card Shape", () => lshape.points = BuildPolygonPoints(CardShapeSource.Preset));
                         GUIUtility.ExitGUI();
                     }
 
                     EditorGUILayout.EndHorizontal();
 
-                    if (PolygonTriangulator.IsSelfIntersecting(lShape.points))
+                    if (PolygonTriangulator.IsSelfIntersecting(lshape.points))
                         EditorGUILayout.HelpBox("The outline crosses itself, the card can't be filled correctly.", MessageType.Warning);
                     break;
 
@@ -135,15 +150,15 @@ namespace CardCreator.Editor
                     EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("sprite"));
                     EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("spriteUsage"), new GUIContent("Use Sprite As"));
 
-                    if (lShape.sprite != null && GUILayout.Button("Match Sprite Aspect"))
+                    if (lshape.sprite != null && GUILayout.Button("Match Sprite Aspect"))
                     {
-                        ModifyTemplate("Match Sprite Aspect", () => lShape.size.x = lShape.size.y * lShape.sprite.rect.width / lShape.sprite.rect.height);
+                        ModifyTemplate("Match Sprite Aspect", () => lshape.size.x = lshape.size.y * lshape.sprite.rect.width / lshape.sprite.rect.height);
                         GUIUtility.ExitGUI();
                     }
                     break;
             }
 
-            if (CardShapeUtility.SupportsRounding(lShape))
+            if (CardShapeUtility.SupportsRounding(lshape))
             {
                 EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("cornerRadius"));
                 EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("cornerSegments"));
@@ -156,7 +171,7 @@ namespace CardCreator.Editor
         {
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Front", EditorStyles.boldLabel);
-            DrawFaceSettings(_serializedTemplate.FindProperty("front"), _template.UsesShapeSprite());
+            DrawFaceSettings(_serializedTemplate.FindProperty("front"), _Template.UsesShapeSprite());
 
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("Back", EditorStyles.boldLabel);
@@ -196,21 +211,21 @@ namespace CardCreator.Editor
         private void SetShapeSource(CardShapeSource pSource)
         {
             //new polygon starts from the current outline so it can be reshaped from there
-            if (pSource == CardShapeSource.Polygon && _template.shape.points.Count < 3)
-                _template.shape.points = BuildPolygonPoints(_template.shape.source);
+            if (pSource == CardShapeSource.Polygon && _Template.shape.points.Count < 3)
+                _Template.shape.points = BuildPolygonPoints(_Template.shape.source);
 
-            _template.shape.source = pSource;
+            _Template.shape.source = pSource;
             _isEditingShape = pSource == CardShapeSource.Polygon;
         }
 
         private List<Vector2> BuildPolygonPoints(CardShapeSource pFrom)
         {
-            CardShapeSettings lShape = _template.shape;
-            CardShapeSource lSource = lShape.source;
+            CardShapeSettings lshape = _Template.shape;
+            CardShapeSource lSource = lshape.source;
 
-            lShape.source = pFrom;
-            List<Vector2> lPoints = CardShapeUtility.Normalize(CardShapeUtility.BuildCorners(lShape), lShape.size);
-            lShape.source = lSource;
+            lshape.source = pFrom;
+            List<Vector2> lPoints = CardShapeUtility.Normalize(CardShapeUtility.BuildCorners(lshape), lshape.size);
+            lshape.source = lSource;
 
             return lPoints;
         }
@@ -230,10 +245,10 @@ namespace CardCreator.Editor
             if (GUILayout.Button(new GUIContent(" Add Variable", EditorGUIUtility.IconContent("Toolbar Plus").image), GUILayout.Height(26f)))
                 ShowAddVariableMenu();
 
-            if (_template.variables.Count == 0)
+            if (_Template.variables.Count == 0)
                 EditorGUILayout.HelpBox("Values that change from one card to another (name, artwork, price...). Each card asset sets its own values.", MessageType.None);
 
-            for (int i = 0; i < _template.variables.Count; i++)
+            for (int i = 0; i < _Template.variables.Count; i++)
                 DrawVariableRow(i);
         }
 
@@ -249,9 +264,9 @@ namespace CardCreator.Editor
 
         private void DrawVariableRow(int pIndex)
         {
-            CardVariable lVariable = _template.variables[pIndex];
+            CardVariable lVariable = _Template.variables[pIndex];
             SerializedProperty lProperty = _serializedTemplate.FindProperty("variables").GetArrayElementAtIndex(pIndex);
-            CardElement lElement = _template.FindContentElement(lVariable.id);
+            CardElement lElement = _Template.FindContentElement(lVariable.id);
             bool lIsExpanded = _expandedRows.Contains(lVariable.id);
 
             Rect lRow = EditorGUILayout.BeginVertical(EditorStyles.helpBox);
@@ -272,7 +287,7 @@ namespace CardCreator.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            string lError = CardNaming.GetErrorInName(_template, lVariable);
+            string lError = CardNaming.GetErrorInName(_Template, lVariable);
 
             if (lError != null)
                 EditorGUILayout.HelpBox(lError, MessageType.Error);
@@ -398,7 +413,7 @@ namespace CardCreator.Editor
         {
             EditorGUILayout.LabelField(pLabel, EditorStyles.miniBoldLabel);
 
-            if (_template.elements.Count == 0)
+            if (_Template.elements.Count == 0)
             {
                 EditorGUILayout.LabelField("No element on the card yet.", EditorStyles.miniLabel);
                 return;
@@ -406,7 +421,7 @@ namespace CardCreator.Editor
 
             EditorGUI.indentLevel++;
 
-            foreach (CardElement lElement in _template.elements)
+            foreach (CardElement lElement in _Template.elements)
             {
                 bool lIsBound = (pIsColor ? lElement.colorVariableId : lElement.visibilityVariableId) == pVariable.id;
 
@@ -438,7 +453,7 @@ namespace CardCreator.Editor
                 CardVariable lVariable = new CardVariable
                 {
                     type = pType,
-                    name = CardNaming.GetUniqueVariableName(_template, GetDefaultVariableName(pType))
+                    name = CardNaming.GetUniqueVariableName(_Template, GetDefaultVariableName(pType))
                 };
 
                 if (pType == CardVariableType.String)
@@ -446,7 +461,7 @@ namespace CardCreator.Editor
                 else if (pType == CardVariableType.Enum)
                     lVariable.enumOptions.AddRange(new[] { "OptionA", "OptionB" });
 
-                _template.variables.Add(lVariable);
+                _Template.variables.Add(lVariable);
                 _expandedRows.Add(lVariable.id);
 
                 if (IsDisplayable(pType))
@@ -456,14 +471,14 @@ namespace CardCreator.Editor
 
         private void RemoveVariable(CardVariable pVariable)
         {
-            _template.variables.Remove(pVariable);
+            _Template.variables.Remove(pVariable);
 
-            CardElement lContent = _template.FindContentElement(pVariable.id);
+            CardElement lContent = _Template.FindContentElement(pVariable.id);
 
             if (lContent != null)
                 RemoveElement(lContent);
 
-            foreach (CardElement lElement in _template.elements)
+            foreach (CardElement lElement in _Template.elements)
             {
                 if (lElement.colorVariableId == pVariable.id)
                     lElement.colorVariableId = null;
@@ -476,7 +491,7 @@ namespace CardCreator.Editor
         // Creates the element displaying a variable value, laid out like a classic card (artwork on top, texts below)
         private void AddContentElement(CardVariable pVariable)
         {
-            Vector2 lCardSize = _template.shape.size;
+            Vector2 lCardSize = _Template.shape.size;
             bool lIsImage = pVariable.type == CardVariableType.Sprite;
 
             CardElement lElement = new CardElement
@@ -489,7 +504,7 @@ namespace CardCreator.Editor
                 color = lIsImage ? Color.white : Color.black
             };
 
-            _template.elements.Add(lElement);
+            _Template.elements.Add(lElement);
             _SelectedElementId = lElement.id;
         }
 
@@ -559,19 +574,19 @@ namespace CardCreator.Editor
 
             EditorGUILayout.EndHorizontal();
 
-            if (!_template.elements.Exists(pElement => string.IsNullOrEmpty(pElement.contentVariableId)))
+            if (!_Template.elements.Exists(pElement => string.IsNullOrEmpty(pElement.contentVariableId)))
                 EditorGUILayout.HelpBox("Images and texts that are the same on every card (frame, labels, messages...). They are baked into the prefab.", MessageType.None);
 
-            for (int i = 0; i < _template.elements.Count; i++)
+            for (int i = 0; i < _Template.elements.Count; i++)
             {
-                if (string.IsNullOrEmpty(_template.elements[i].contentVariableId))
+                if (string.IsNullOrEmpty(_Template.elements[i].contentVariableId))
                     DrawFixedElementRow(i);
             }
         }
 
         private void DrawFixedElementRow(int pIndex)
         {
-            CardElement lElement = _template.elements[pIndex];
+            CardElement lElement = _Template.elements[pIndex];
             SerializedProperty lProperty = _serializedTemplate.FindProperty("elements").GetArrayElementAtIndex(pIndex);
             bool lIsExpanded = _expandedRows.Contains(lElement.id);
 
@@ -610,7 +625,7 @@ namespace CardCreator.Editor
 
         private void AddFixedElement(CardElementType pType)
         {
-            Vector2 lCardSize = _template.shape.size;
+            Vector2 lCardSize = _Template.shape.size;
             bool lIsImage = pType == CardElementType.Image;
 
             CardElement lElement = new CardElement
@@ -621,7 +636,7 @@ namespace CardCreator.Editor
                 color = lIsImage ? Color.white : Color.black
             };
 
-            _template.elements.Add(lElement);
+            _Template.elements.Add(lElement);
             _SelectedElementId = lElement.id;
             _expandedRows.Add(lElement.id);
         }
@@ -632,7 +647,7 @@ namespace CardCreator.Editor
 
         private void DrawElementSettings(CardElement pElement)
         {
-            int lIndex = _template.elements.IndexOf(pElement);
+            int lIndex = _Template.elements.IndexOf(pElement);
             SerializedProperty lProperty = _serializedTemplate.FindProperty("elements").GetArrayElementAtIndex(lIndex);
             bool lIsBound = !string.IsNullOrEmpty(pElement.contentVariableId);
 
@@ -641,7 +656,7 @@ namespace CardCreator.Editor
             EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("size"));
             EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("rotation"));
 
-            CardVariable lColorVariable = _template.FindVariable(pElement.colorVariableId);
+            CardVariable lColorVariable = _Template.FindVariable(pElement.colorVariableId);
 
             if (lColorVariable == null)
                 EditorGUILayout.PropertyField(lProperty.FindPropertyRelative("color"));
@@ -670,7 +685,7 @@ namespace CardCreator.Editor
                 }
             }
 
-            using (new EditorGUI.DisabledScope(lIndex == _template.elements.Count - 1))
+            using (new EditorGUI.DisabledScope(lIndex == _Template.elements.Count - 1))
             {
                 if (GUILayout.Button("Bring Forward", EditorStyles.miniButtonRight))
                 {
@@ -713,7 +728,7 @@ namespace CardCreator.Editor
 
         private void RemoveElement(CardElement pElement)
         {
-            _template.elements.Remove(pElement);
+            _Template.elements.Remove(pElement);
 
             if (_SelectedElementId == pElement.id)
                 _SelectedElementId = null;
@@ -721,7 +736,7 @@ namespace CardCreator.Editor
 
         private void SwapElements(int pA, int pB)
         {
-            (_template.elements[pA], _template.elements[pB]) = (_template.elements[pB], _template.elements[pA]);
+            (_Template.elements[pA], _Template.elements[pB]) = (_Template.elements[pB], _Template.elements[pA]);
         }
 
         private void SetRowExpanded(string pRowId, bool pIsExpanded, CardElement pElement)
@@ -757,15 +772,15 @@ namespace CardCreator.Editor
                 string lFolder = EditorUtility.OpenFolderPanel("Card Output Folder", "Assets", "");
 
                 if (lFolder.StartsWith(Application.dataPath))
-                    ModifyTemplate("Change Output Folder", () => _template.outputFolder = "Assets" + lFolder.Substring(Application.dataPath.Length));
+                    ModifyTemplate("Change Output Folder", () => _Template.outputFolder = "Assets" + lFolder.Substring(Application.dataPath.Length));
 
                 GUIUtility.ExitGUI();
             }
 
             EditorGUILayout.EndHorizontal();
 
-            if (string.IsNullOrEmpty(_template.outputFolder))
-                EditorGUILayout.LabelField(" ", $"Assets/Cards/{_template.templateName} when empty", EditorStyles.miniLabel);
+            if (string.IsNullOrEmpty(_Template.outputFolder))
+                EditorGUILayout.LabelField(" ", $"Assets/Cards/{_Template.templateName} when empty", EditorStyles.miniLabel);
 
             EditorGUILayout.PropertyField(_serializedTemplate.FindProperty("codeNamespace"), new GUIContent("Namespace"));
         }
